@@ -44,10 +44,16 @@ jobs:
       - name: Build GrimAC Bukkit with ShadowJar
         run: ./gradlew :bukkit:assemble -x test -x spotlessCheck --no-daemon
 
+      - name: Rename JAR (bukkit → leaf)
+        run: |
+          for f in bukkit/build/libs/grimac-bukkit-*.jar; do
+            mv "$f" "${f/grimac-bukkit-/grimac-leaf-}"
+          done
+
       - name: Locate Build Artifact
         id: find_jar
         run: |
-          JAR_PATH=$(find bukkit/build/libs/ -name "grimac-bukkit-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          JAR_PATH=$(find bukkit/build/libs/ -name "grimac-leaf-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
           echo "Found jar: $JAR_PATH"
           echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
           JAR_NAME=$(basename "$JAR_PATH")
