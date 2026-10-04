@@ -33,13 +33,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Patch for Leaf Async Mode
+      - name: Patch for Leaf API
         run: |
           echo "Disabling Fabric modules to optimize build time..."
           sed -i '/include.*fabric/d' settings.gradle.kts
 
-          echo "Patching platform detection to enable Folia/Leaf Async Schedulers..."
-          sed -i 's|if (ReflectionUtils.hasClass("io.papermc.paper.threadedregions.RegionizedServer")) return Platform.FOLIA;|if (ReflectionUtils.hasClass("io.papermc.paper.threadedregions.RegionizedServer") \|\| ReflectionUtils.hasClass("org.dreeam.leaf.event.AsyncPreAuthenticateEvent")) return Platform.FOLIA;|g' common/src/main/java/ac/grim/grimac/GrimAPI.java
+          echo "Configuring Leaf Maven repository and Leaf API dependency..."
+          sed -i 's|repositories {|repositories {\n    maven("https://maven.leafmc.one/snapshots/")|g' bukkit/build.gradle.kts
+          sed -i 's|compileOnly(libs.paper.api)|compileOnly("cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT")|g' bukkit/build.gradle.kts
 
       - name: Build GrimAC Bukkit with ShadowJar
         run: ./gradlew :bukkit:assemble -x test -x spotlessCheck --no-daemon
@@ -63,13 +64,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-leaf-build
-          name: "GrimAC (Leaf Async Build) - Auto-Updated"
+          name: "GrimAC (Leaf Build) - Auto-Updated"
           body: |
-            Automaticky sestavený nejnovější build GrimAC optimalizovaný pro **Leaf API & Folia Async Schedulers**.
+            Automaticky sestavený nejnovější build GrimAC optimalizovaný pro **Leaf API (Minecraft 26.x)**.
             
             - **Upstream repozitář:** [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) (větev `2.0`)
-            - **Режim:** Plně asynchronní (Leaf Async Schedulers + Concurrent Chunk Cache)
-            - **Java:** 25 (required by Leaf 26.x)
+            - **API cíl:** `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT`
+            - **Architektura:** Asynchronní Netty packet processing + tick-synchronní determinismus
+            - **Java:** 25 (LTS)
             - **Aktualizováno:** Každou neděli automaticky nebo na vyžádání.
           files: ${{ steps.find_jar.outputs.jar_path }}
           prerelease: false
