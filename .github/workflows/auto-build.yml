@@ -1,6 +1,8 @@
 name: Auto-Sync & Build GrimAC for Leaf
 
 on:
+  push:
+    branches: [ main ]
   schedule:
     # Automatické sestavení každou neděli ve 4:00 UTC ráno
     - cron: '0 4 * * 0'
