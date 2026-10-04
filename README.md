@@ -17,21 +17,18 @@ Drop `grimac-leaf-{version}.jar` into your server's `plugins/` folder and restar
 
 ---
 
-## ⚡ What this does
+## 📊 Comparison
 
-| Feature | Upstream GrimAC | This Leaf build |
+### Upstream GrimAC vs. This Leaf Build
+
+| Aspect / Feature | Upstream GrimAC (Official) | `grimac-leaf` (This Build) |
 |---|---|---|
-| Target API | `io.papermc.paper:paper-api` | `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT` |
-| Java Version | 17 / 21 | **25 (LTS)** |
-| Packet Processing | Asynchronous (Netty threads) | **Asynchronous (Netty threads)** |
-| Tick Synchronization | Server Tick lockstep | **Server Tick lockstep (zero lag desync)** |
-| Auto-update | Manual | Every Sunday + on-demand |
-
-### Architecture
-
-1. **Native Leaf API Target:** Compiles directly against `cn.dreeam.leaf:leaf-api` snapshot releases hosted on the LeafMC Maven repository, using Java 25 target bytecode for modern 26.x server forks.
-2. **Asynchronous Packet Engine:** 100% of player movement simulations, collision boxes, raycasts, and reach calculations run asynchronously on Netty packet threads via PacketEvents, keeping your main game thread free.
-3. **Tick Lockstep Stability:** Ticking advances in lockstep with the actual server game loop rather than detached wall-clock timers, ensuring 0 false positives during server lag spikes or world loading.
+| **Anticheat Core Logic** | GrimAC 2.0 codebase | **100% identical GrimAC 2.0 logic** (zero check tampering) |
+| **Compiled Against** | `io.papermc.paper:paper-api` (1.20.6) | **`cn.dreeam.leaf:leaf-api` (26.3 SNAPSHOT)** |
+| **Java Target** | Java 21 | **Java 25 (LTS)** |
+| **Leaf 26.x Compatibility** | Runs via legacy compatibility layer | **Directly linked against native Leaf API classes** |
+| **Binary Availability** | Must be compiled manually from source | **Pre-built `.jar` in Releases (automated weekly builds)** |
+| **Artifact Name** | `grimac-bukkit-{version}.jar` | **`grimac-leaf-{version}.jar`** |
 
 ---
 
@@ -69,12 +66,16 @@ Nejnovější zkompilovaný JAR najdeš v záložce Releases:
 
 Vlož soubor `grimac-leaf-{version}.jar` do složky `plugins/` na serveru a restartuj.
 
-### Proč tento build?
+### 📊 Porovnání (Upstream GrimAC vs. Tento Leaf build)
 
-Tento build kompiluje GrimAC 2.0 přímo proti **Leaf API (`cn.dreeam.leaf:leaf-api`)** a cílí na **Java 25**, což zajišťuje maximální kompatibilitu a optimalizaci pro servery běžící na Leafu (Minecraft 26.x).
-
-- **Plně asynchronní kontrola paketů:** Veškeré matematické výpočty, predikce, kolizní boxy i raycasty běží asynchronně v síťových vláknech Netty, takže nezatěžují hlavní herní vlákno.
-- **Stabilní synchronizace ticků:** Časování zůstává svázáno s reálným během herního ticku serveru, což předchází falešným detekcím při propadech TPS nebo lag spikech.
+| Aspekt / Vlastnost | Upstream GrimAC (Oficiální) | `grimac-leaf` (Tento build) |
+|---|---|---|
+| **Kód / Logika anticheatu** | GrimAC 2.0 (GrimAnticheat/Grim) | **100% identický kód GrimAC 2.0** (žádné zásahy do detekcí) |
+| **Kompilováno proti** | `io.papermc.paper:paper-api` (1.20.6) | **`cn.dreeam.leaf:leaf-api` (26.3 SNAPSHOT)** |
+| **Cílová verze Javy** | Java 21 | **Java 25 (LTS)** |
+| **Kompatibilita s Leaf 26.x** | Běží přes zpětnou kompatibilitu | **Přímé linkování proti nativním Leaf API třídám** |
+| **Dostupnost sestavení** | Nutno kompilovat ručně ze zdrojáků | **Hotový `.jar` ke stažení v Releases (týdenní auto-build)** |
+| **Název souboru** | `grimac-bukkit-{verze}.jar` | **`grimac-leaf-{verze}.jar`** |
 
 ### Jak fungují automatické aktualizace
 
