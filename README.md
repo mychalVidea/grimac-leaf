@@ -23,10 +23,11 @@ Stock GrimAC checks for `io.papermc.paper.threadedregions.RegionizedServer` (pur
 
 | Feature | Stock GrimAC on Leaf | This fork |
 |---|---|---|
-| Platform detected as | `BUKKIT` (main thread) | `FOLIA` (async) |
+| Platform detected as | `BUKKIT` (main thread) | `LEAF` → Folia Scheduler mode |
 | Tick-end checks | main thread | `Bukkit.getAsyncScheduler()` |
 | Block/chunk caching | `HashMap` | `ConcurrentHashMap` |
 | TPS impact | noticeable under load | near-zero |
+| Java | 21 | **25** (required by Leaf 26.x) |
 | Auto-update | manual | every Sunday + on-demand |
 
 ### The patch (one line)
@@ -42,7 +43,8 @@ if (ReflectionUtils.hasClass("io.papermc.paper.threadedregions.RegionizedServer"
     || ReflectionUtils.hasClass("org.dreeam.leaf.event.AsyncPreAuthenticateEvent")) return Platform.FOLIA;
 ```
 
-This single change causes GrimAC to activate `FoliaPlatformScheduler`, offloading all checks to `Bukkit.getAsyncScheduler()` and using thread-safe concurrent structures throughout.
+> **Why not just use `Platform.FOLIA`?**  
+> Leaf is a **Paper/Purpur fork** — it is *not* Folia (threaded regions). However, Leaf ships the full **Folia Scheduler API** (`AsyncScheduler`, `EntityScheduler`, `GlobalRegionScheduler`, `RegionScheduler`) as a drop-in interface. The only thing GrimAC checks to decide between Bukkit and Folia mode is the presence of `io.papermc.paper.threadedregions.RegionizedServer` — which is a Folia-only class that Leaf intentionally does NOT include. Our patch adds a second check for Leaf's own class, so GrimAC switches to async scheduler mode while remaining on a single-threaded server — exactly what we want.
 
 ---
 
@@ -65,7 +67,7 @@ Want a build right now? Go to **Actions → Auto-Sync & Build GrimAC for Leaf �
 
 - **Server software:** [LeafMC](https://github.com/Winds-Studio/Leaf) 26.2 / 26.3
 - **Minecraft version:** 26.2 – 26.3
-- **Java:** 21 (LTS)
+- **Java:** **25** (required by Leaf 26.x / Minecraft 26.x)
 - **Based on:** GrimAC `2.0` branch
 
 ---
