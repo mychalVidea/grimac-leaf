@@ -42,6 +42,17 @@ jobs:
           sed -i 's|repositories {|repositories {\n    maven("https://maven.leafmc.one/snapshots/")|g' bukkit/build.gradle.kts
           sed -i 's|compileOnly(libs.paper.api)|compileOnly("cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT")|g' bukkit/build.gradle.kts
 
+          echo "Configuring Java 25 toolchain for bukkit module (required for leaf-api 26.x class version 69.0)..."
+          cat << 'EOF' >> bukkit/build.gradle.kts
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(25)
+}
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+EOF
+
       - name: Build GrimAC Bukkit with ShadowJar
         run: ./gradlew :bukkit:assemble -x test -x spotlessCheck --no-daemon
 
