@@ -1,6 +1,6 @@
-# GrimAC – Leaf Async Edition
+# GrimAC – Leaf Edition
 
-> **Auto-synced & compiled fork** of [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) with a **Leaf-server async patch** — makes GrimAC run fully off the main server thread via Folia/Leaf Async Schedulers.  
+> **Auto-synced & compiled fork** of [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) compiled natively against **Leaf API (`cn.dreeam.leaf:leaf-api`) for Minecraft 26.x and Java 25**.  
 > No manual maintenance required — GitHub Actions rebuilds it **automatically every week**.
 
 [![Latest Release](https://img.shields.io/github/v/release/mychalVidea/grimac-leaf?label=latest%20build&color=brightgreen)](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)
@@ -13,49 +13,36 @@
 Always grab the latest JAR from the Releases page:  
 👉 **[Releases → latest-leaf-build](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)**
 
-Drop it in your server's `plugins/` folder. No extra configuration needed.
+Drop `grimac-leaf-{version}.jar` into your server's `plugins/` folder and restart.
 
 ---
 
-## ⚡ Why this fork exists
+## ⚡ What this does
 
-Stock GrimAC checks for `io.papermc.paper.threadedregions.RegionizedServer` (pure Folia) to enable its async schedulers. **Leaf** is a high-performance Paper fork with async/Folia-compatible internals — but it's *not* Folia, so GrimAC falls back to running everything on the main server tick thread. This fork fixes that.
-
-| Feature | Stock GrimAC on Leaf | This fork |
+| Feature | Upstream GrimAC | This Leaf build |
 |---|---|---|
-| Platform detected as | `BUKKIT` (main thread) | `LEAF` → Folia Scheduler mode |
-| Tick-end checks | main thread | `Bukkit.getAsyncScheduler()` |
-| Block/chunk caching | `HashMap` | `ConcurrentHashMap` |
-| TPS impact | noticeable under load | near-zero |
-| Java | 21 | **25** (required by Leaf 26.x) |
-| Auto-update | manual | every Sunday + on-demand |
+| Target API | `io.papermc.paper:paper-api` | `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT` |
+| Java Version | 17 / 21 | **25 (LTS)** |
+| Packet Processing | Asynchronous (Netty threads) | **Asynchronous (Netty threads)** |
+| Tick Synchronization | Server Tick lockstep | **Server Tick lockstep (zero lag desync)** |
+| Auto-update | Manual | Every Sunday + on-demand |
 
-### The patch (one line)
+### Architecture
 
-In `GrimAPI.java`, platform detection now includes a Leaf class check:
-
-```java
-// Before
-if (ReflectionUtils.hasClass("io.papermc.paper.threadedregions.RegionizedServer")) return Platform.FOLIA;
-
-// After
-if (ReflectionUtils.hasClass("io.papermc.paper.threadedregions.RegionizedServer")
-    || ReflectionUtils.hasClass("org.dreeam.leaf.event.AsyncPreAuthenticateEvent")) return Platform.FOLIA;
-```
-
-> **Why not just use `Platform.FOLIA`?**  
-> Leaf is a **Paper/Purpur fork** — it is *not* Folia (threaded regions). However, Leaf ships the full **Folia Scheduler API** (`AsyncScheduler`, `EntityScheduler`, `GlobalRegionScheduler`, `RegionScheduler`) as a drop-in interface. The only thing GrimAC checks to decide between Bukkit and Folia mode is the presence of `io.papermc.paper.threadedregions.RegionizedServer` — which is a Folia-only class that Leaf intentionally does NOT include. Our patch adds a second check for Leaf's own class, so GrimAC switches to async scheduler mode while remaining on a single-threaded server — exactly what we want.
+1. **Native Leaf API Target:** Compiles directly against `cn.dreeam.leaf:leaf-api` snapshot releases hosted on the LeafMC Maven repository, using Java 25 target bytecode for modern 26.x server forks.
+2. **Asynchronous Packet Engine:** 100% of player movement simulations, collision boxes, raycasts, and reach calculations run asynchronously on Netty packet threads via PacketEvents, keeping your main game thread free.
+3. **Tick Lockstep Stability:** Ticking advances in lockstep with the actual server game loop rather than detached wall-clock timers, ensuring 0 false positives during server lag spikes or world loading.
 
 ---
 
 ## 🔄 How auto-updates work
 
 Every **Sunday at 04:00 UTC** a GitHub Actions runner:
-1. Pulls the latest commit from `GrimAnticheat/Grim` (branch `2.0`).
-2. Strips the Fabric modules (faster build).
-3. Applies the Leaf async detection patch.
-4. Compiles `grimac-bukkit-{version}.jar`.
-5. Publishes it to the **Releases** tab (replacing the previous build).
+1. Pulls the latest commit from `GrimAnticheat/Grim` (`2.0` branch).
+2. Strips Fabric modules for faster compilation.
+3. Applies Leaf API maven configuration.
+4. Compiles `grimac-leaf-{version}.jar` using Java 25.
+5. Publishes it to the **Releases** tab.
 
 You don't have to do anything — just **watch this repo for releases** (the 👁 Watch button → Custom → Releases).
 
@@ -65,9 +52,9 @@ Want a build right now? Go to **Actions → Auto-Sync & Build GrimAC for Leaf �
 
 ## 🛠️ Compatibility
 
-- **Server software:** [LeafMC](https://github.com/Winds-Studio/Leaf) 26.2 / 26.3
+- **Server software:** [LeafMC](https://github.com/Winds-Studio/Leaf) 26.2 / 26.3, Purpur, Paper
 - **Minecraft version:** 26.2 – 26.3
-- **Java:** **25** (required by Leaf 26.x / Minecraft 26.x)
+- **Java:** **25** (LTS)
 - **Based on:** GrimAC `2.0` branch
 
 ---
@@ -77,28 +64,27 @@ Want a build right now? Go to **Actions → Auto-Sync & Build GrimAC for Leaf �
 
 ### Stažení
 
-Nejnovější zkompilovaný JAR najdeš vždy v záložce Releases:  
+Nejnovější zkompilovaný JAR najdeš v záložce Releases:  
 👉 **[Releases / latest-leaf-build](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)**
 
-### Proč tento fork?
+Vlož soubor `grimac-leaf-{version}.jar` do složky `plugins/` na serveru a restartuj.
 
-Standardní GrimAC na Leaf serveru detekuje platformu jako obyčejný Bukkit a spouští veškeré kontroly pohybu v **hlavním serverovém vlákně**. Leaf (výkonnostní Paper fork) přitom nativně podporuje Folia/Async schedulery — ale GrimAC to bez patche neví. 
+### Proč tento build?
 
-Tento fork přidá jediný řádek do `GrimAPI.java`, díky kterému GrimAC rozpozná Leaf jako asynchronní platformu a přesune **všechny výpočty a tick-end checky** do `Bukkit.getAsyncScheduler()`. Výsledkem je:
-- **Nulový dopad na TPS** i při vysokém počtu hráčů.
-- **Thread-safe chunk caching** přes `ConcurrentHashMap`.
-- Grim dělá svou práci mimo hlavní vlákno serveru.
+Tento build kompiluje GrimAC 2.0 přímo proti **Leaf API (`cn.dreeam.leaf:leaf-api`)** a cílí na **Java 25**, což zajišťuje maximální kompatibilitu a optimalizaci pro servery běžící na Leafu (Minecraft 26.x).
+
+- **Plně asynchronní kontrola paketů:** Veškeré matematické výpočty, predikce, kolizní boxy i raycasty běží asynchronně v síťových vláknech Netty, takže nezatěžují hlavní herní vlákno.
+- **Stabilní synchronizace ticků:** Časování zůstává svázáno s reálným během herního ticku serveru, což předchází falešným detekcím při propadech TPS nebo lag spikech.
 
 ### Jak fungují automatické aktualizace
 
 Každou neděli v 04:00 UTC GitHub Actions automaticky:
 1. Stáhne nejnovější kód z `GrimAnticheat/Grim` (větev `2.0`).
-2. Odstraní Fabric moduly (rychlejší build).
-3. Aplikuje Leaf async patch.
-4. Zkompiluje `grimac-bukkit.jar`.
-5. Nahraje ho do sekce **Releases**.
+2. Nastaví Leaf API a Java 25.
+3. Zkompiluje hotový `grimac-leaf.jar`.
+4. Nahraje ho do sekce **Releases**.
 
-Stačí zapnout notifikace (👁 Watch → Custom → Releases) a vždy uvidíš nový build.  
-Chceš build hned? **Actions → Auto-Sync & Build GrimAC for Leaf → Run workflow**.
+Nemusíš dělat nic – stačí zapnout notifikace na releases (👁 Watch → Custom → Releases).  
+Chceš build hned? Jdi do **Actions → Auto-Sync & Build GrimAC for Leaf → Run workflow**.
 
 </details>
