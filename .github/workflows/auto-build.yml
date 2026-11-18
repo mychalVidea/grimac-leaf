@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: grimac-leaf-auto-build
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Sync, Patch & Build GrimAC
@@ -59,21 +63,38 @@ jobs:
 
       - name: Locate Build Artifact
         id: find_jar
+        shell: bash
         run: |
           JAR_PATH=$(find bukkit/build/libs/ -name "grimac-leaf-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$JAR_PATH" ] || [ ! -f "$JAR_PATH" ]; then
+            echo "::error::Build artifact grimac-leaf-*.jar was not found!"
+            exit 1
+          fi
           echo "Found jar: $JAR_PATH"
-          echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "jar_path=$JAR_PATH" >> "$GITHUB_OUTPUT"
           JAR_NAME=$(basename "$JAR_PATH")
-          echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
+          echo "jar_name=$JAR_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Create or Update GitHub Release
+          BASE_VERSION="${JAR_NAME#grimac-leaf-}"
+          BASE_VERSION="${BASE_VERSION%.jar}"
+          if [ "${{ github.run_attempt }}" = "1" ]; then
+            RELEASE_TAG="v${BASE_VERSION}-b${{ github.run_number }}"
+          else
+            RELEASE_TAG="v${BASE_VERSION}-b${{ github.run_number }}.${{ github.run_attempt }}"
+          fi
+          echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create New GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest-leaf-build
-          name: "GrimAC (Leaf Build) - Auto-Updated"
+          tag_name: ${{ steps.find_jar.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: "GrimAC (Leaf Build) - ${{ steps.find_jar.outputs.base_version }}"
           body: |
             Automaticky sestavený nejnovější build GrimAC optimalizovaný pro **Leaf API (Minecraft 26.x)**.
-            
+
+            - **Verze buildu:** `${{ steps.find_jar.outputs.base_version }}` (run #${{ github.run_number }})
             - **Upstream repozitář:** [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) (větev `2.0`)
             - **API cíl:** `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT` ([maven.leafmc.one/snapshots](https://maven.leafmc.one/snapshots/))
             - **Architektura:** Asynchronní Netty packet processing + tick-synchronní determinismus
@@ -82,3 +103,25 @@ jobs:
           files: ${{ steps.find_jar.outputs.jar_path }}
           prerelease: false
           draft: false
+          make_latest: 'true'
+
+      - name: Delete Old Releases and Tags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          CURRENT_TAG: ${{ steps.find_jar.outputs.release_tag }}
+        run: |
+          echo "Cleaning up old releases (keeping only ${CURRENT_TAG})..."
+          while IFS='|' read -r rel_id rel_tag; do
+            [ -z "$rel_id" ] && continue
+            echo "Deleting old release ID=${rel_id} (tag=${rel_tag:-none})..."
+            gh api -X DELETE "repos/${REPO}/releases/${rel_id}" || echo "::warning::Failed to delete release ID=${rel_id}"
+          done < <(gh api --paginate "repos/${REPO}/releases" --jq --arg current "$CURRENT_TAG" '.[] | select(.tag_name != $current) | "\(.id)|\(.tag_name // "")"')
+
+          echo "Cleaning up old git tags (keeping only ${CURRENT_TAG})..."
+          while read -r encoded_tag; do
+            [ -z "$encoded_tag" ] && continue
+            echo "Deleting old tag: ${encoded_tag}..."
+            gh api -X DELETE "repos/${REPO}/git/refs/tags/${encoded_tag}" || echo "::warning::Failed to delete tag ${encoded_tag}"
+          done < <(gh api --paginate "repos/${REPO}/tags" --jq --arg current "$CURRENT_TAG" '.[] | select(.name != $current) | (.name | @uri)')
