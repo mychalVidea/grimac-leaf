@@ -3,7 +3,7 @@
 > **Auto-synced & compiled fork** of [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) compiled natively against **Leaf API (`cn.dreeam.leaf:leaf-api`) for Minecraft 26.x and Java 25**.  
 > No manual maintenance required — GitHub Actions rebuilds it **automatically every week**.
 
-[![Latest Release](https://img.shields.io/github/v/release/mychalVidea/grimac-leaf?label=latest%20build&color=brightgreen)](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)
+[![Latest Release](https://img.shields.io/github/v/release/mychalVidea/grimac-leaf?label=latest%20build&color=brightgreen)](https://github.com/mychalVidea/grimac-leaf/releases/latest)
 [![Auto-Build](https://img.shields.io/github/actions/workflow/status/mychalVidea/grimac-leaf/auto-build.yml?label=auto-build)](https://github.com/mychalVidea/grimac-leaf/actions)
 
 ---
@@ -11,7 +11,7 @@
 ## 📥 Download
 
 Always grab the latest JAR from the Releases page:  
-👉 **[Releases → latest-leaf-build](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)**
+👉 **[Releases → Latest Build](https://github.com/mychalVidea/grimac-leaf/releases/latest)**
 
 Drop `grimac-leaf-{version}.jar` into your server's `plugins/` folder and restart.
 
@@ -62,7 +62,7 @@ Want a build right now? Go to **Actions → Auto-Sync & Build GrimAC for Leaf �
 ### Stažení
 
 Nejnovější zkompilovaný JAR najdeš v záložce Releases:  
-👉 **[Releases / latest-leaf-build](https://github.com/mychalVidea/grimac-leaf/releases/tag/latest-leaf-build)**
+👉 **[Releases / Nejnovější build](https://github.com/mychalVidea/grimac-leaf/releases/latest)**
 
 Vlož soubor `grimac-leaf-{version}.jar` do složky `plugins/` na serveru a restartuj.
 
