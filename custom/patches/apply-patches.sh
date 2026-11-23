@@ -11,7 +11,7 @@ echo "Custom resources directory: ${CUSTOM_DIR}"
 # -------------------------------------------------------------
 # 1. DEBLOAT: Vypnutí zbytečných Fabric modulů
 # -------------------------------------------------------------
-echo "[1/6] Optimalizace sestavení - vypnutí Fabric modulů..."
+echo "[1/5] Optimalizace sestavení - vypnutí Fabric modulů..."
 if [ -f "settings.gradle.kts" ]; then
     sed -i '/include.*fabric/d' settings.gradle.kts
 fi
@@ -19,7 +19,7 @@ fi
 # -------------------------------------------------------------
 # 2. DEBLOAT: Odstranění bStats telemetrie
 # -------------------------------------------------------------
-echo "[2/6] Debloat - odstranění bStats telemetrie..."
+echo "[2/5] Debloat - odstranění bStats telemetrie..."
 LOADER_FILE="bukkit/src/main/java/ac/grim/grimac/platform/bukkit/GrimACBukkitLoaderPlugin.java"
 if [ -f "$LOADER_FILE" ]; then
     sed -i 's/new BukkitBStats(),/\/\/ bStats stripped for debloat/g' "$LOADER_FILE"
@@ -29,7 +29,7 @@ fi
 # -------------------------------------------------------------
 # 3. DEBLOAT: Odstranění zbytečného UpdateCheckeru
 # -------------------------------------------------------------
-echo "[3/6] Debloat - vyřazení externího UpdateCheckeru..."
+echo "[3/5] Debloat - vyřazení externího UpdateCheckeru..."
 UPDATE_CHECKER="common/src/main/java/ac/grim/grimac/manager/init/start/UpdateChecker.java"
 if [ -f "$UPDATE_CHECKER" ]; then
     cat << 'EOF' > "$UPDATE_CHECKER"
@@ -53,7 +53,7 @@ fi
 # -------------------------------------------------------------
 # 4. DESIGN: Aplikace MYCHAL SMP brandu (bez prefixů, brand barvy)
 # -------------------------------------------------------------
-echo "[4/6] Design - aplikace MYCHAL SMP brand zpráv..."
+echo "[4/5] Design - aplikace MYCHAL SMP brand zpráv..."
 CUSTOM_MESSAGES="${CUSTOM_DIR}/messages/en.yml"
 if [ -f "$CUSTOM_MESSAGES" ]; then
     mkdir -p common/src/main/resources/messages
@@ -66,23 +66,18 @@ if [ -f "$CUSTOM_MESSAGES" ]; then
 fi
 
 # -------------------------------------------------------------
-# 5. LEAF API: Napojení na nativní Leaf API
+# 5. LEAF API & JAVA 25 PRO BUKKIT MODULE
 # -------------------------------------------------------------
-echo "[5/6] Leaf API - konfigurace maven repository a leaf-api..."
+echo "[5/5] Leaf API & Java 25 - konfigurace maven repository a leaf-api..."
 if [ -f "bukkit/build.gradle.kts" ]; then
     sed -i 's|repositories {|repositories {\n    maven("https://maven.leafmc.one/snapshots/")|g' bukkit/build.gradle.kts
     sed -i 's|compileOnly(libs.paper.api)|compileOnly("cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT")|g' bukkit/build.gradle.kts
-fi
 
-# -------------------------------------------------------------
-# 6. JAVA 25: Toolchain a parametry kompilátoru v base conventions
-# -------------------------------------------------------------
-echo "[6/6] Java 25 - nastavení toolchainu v base-conventions..."
-CONVENTIONS="buildSrc/src/main/kotlin/grim.base-conventions.gradle.kts"
-if [ -f "$CONVENTIONS" ]; then
-    sed -i 's/JavaLanguageVersion.of(21)/JavaLanguageVersion.of(25)/g' "$CONVENTIONS"
-    sed -i 's/options.release.set(17)/options.release.set(25)/g' "$CONVENTIONS"
-    echo "  -> Java 25 nastavena v base-conventions"
+    # Java 25 toolchain nastavujeme specificky pro bukkit modul (vyžadováno pro leaf-api bytecode 69.0),
+    # zatímco common modul zůstává na výchozí konfiguraci, aby Lombok správně generoval gettery/settery.
+    echo "tasks.withType<JavaCompile>().configureEach { options.release.set(25) }" >> bukkit/build.gradle.kts
+    echo "java { toolchain.languageVersion.set(JavaLanguageVersion.of(25)) }" >> bukkit/build.gradle.kts
+    echo "  -> Leaf API a Java 25 toolchain nakonfigurovány pro bukkit modul"
 fi
 
 echo "=== Všechny úpravy úspěšně aplikovány ==="
