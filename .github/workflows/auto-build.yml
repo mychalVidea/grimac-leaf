@@ -4,10 +4,15 @@ on:
   push:
     branches: [ main ]
   schedule:
-    # Automatické sestavení každou neděli ve 4:00 UTC ráno
-    - cron: '0 4 * * 0'
+    # Automatická kontrola nových upstream commitů každé 4 hodiny
+    - cron: '0 */4 * * *'
   workflow_dispatch:
-    # Tlačítko na ruční spuštění přímo z GitHub webového rozhraní
+    inputs:
+      force_build:
+        description: 'Vynutit sestavení i bez nového upstream commitu'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -17,8 +22,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-upstream:
+    name: Check Upstream Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+      upstream_sha: ${{ steps.check.outputs.upstream_sha }}
+      upstream_msg: ${{ steps.check.outputs.upstream_msg }}
+      upstream_date: ${{ steps.check.outputs.upstream_date }}
+    steps:
+      - name: Query Upstream Grim Commit
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.force_build == true || inputs.force_build == 'true') }}
+          IS_PUSH: ${{ github.event_name == 'push' }}
+        run: |
+          echo "Zjišťuji nejnovější commit v GrimAnticheat/Grim (větev 2.0)..."
+          UPSTREAM_DATA=$(curl -s -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/GrimAnticheat/Grim/commits/2.0")
+          UPSTREAM_SHA=$(echo "$UPSTREAM_DATA" | jq -r '.sha // empty')
+          UPSTREAM_MSG=$(echo "$UPSTREAM_DATA" | jq -r '.commit.message // ""' | head -n 1)
+          UPSTREAM_DATE=$(echo "$UPSTREAM_DATA" | jq -r '.commit.committer.date // ""')
+
+          if [ -z "$UPSTREAM_SHA" ]; then
+            echo "::warning::Nepodařilo se načíst upstream SHA z GitHub API. Pro jistotu spustíme build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "upstream_sha=unknown" >> "$GITHUB_OUTPUT"
+            echo "upstream_msg=Manual/Fallback build" >> "$GITHUB_OUTPUT"
+            echo "upstream_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Nejnovější upstream commit: ${UPSTREAM_SHA}"
+          echo "upstream_sha=${UPSTREAM_SHA}" >> "$GITHUB_OUTPUT"
+          echo "upstream_msg=${UPSTREAM_MSG}" >> "$GITHUB_OUTPUT"
+          echo "upstream_date=${UPSTREAM_DATE}" >> "$GITHUB_OUTPUT"
+
+          # Zjistíme naposledy sestavený SHA z těla existujícího releasu
+          LAST_RELEASE_BODY=$(gh release view --repo "${REPO}" --json body -q '.body' 2>/dev/null || true)
+          LAST_BUILT_SHA=$(echo "$LAST_RELEASE_BODY" | grep -oP 'GrimAnticheat/Grim/commit/\K[a-f0-9]{40}' | head -n 1 || true)
+          echo "Naposledy sestavený upstream SHA: ${LAST_BUILT_SHA:-žádný}"
+
+          if [ "$FORCE" = "true" ] || [ "$IS_PUSH" = "true" ]; then
+            echo "Spuštěno ručně nebo při push do main -> stavíme."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$LAST_BUILT_SHA" ] && [ "$LAST_BUILT_SHA" = "$UPSTREAM_SHA" ]; then
+            echo "Upstream Grim je beze změny (${UPSTREAM_SHA} je již sestaven). Přeskakuji kompilaci."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Detekován nový upstream commit! Spouštím sestavení."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: Sync, Patch & Build GrimAC
+    needs: check-upstream
+    if: needs.check-upstream.outputs.should_build == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +88,13 @@ jobs:
           repository: 'GrimAnticheat/Grim'
           ref: '2.0'
           fetch-depth: 0
+
+      - name: Checkout Customizations (grimac-leaf)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: 'main'
+          path: 'custom-repo'
 
       - name: Set up Java 25
         uses: actions/setup-java@v5
@@ -39,89 +106,83 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Patch for Leaf API
+      - name: Apply MYCHAL SMP Customizations (Debloat, Design, Leaf & Java 25)
         run: |
-          echo "Disabling Fabric modules to optimize build time..."
-          sed -i '/include.*fabric/d' settings.gradle.kts
-
-          echo "Configuring Leaf Maven repository and Leaf API dependency..."
-          sed -i 's|repositories {|repositories {\n    maven("https://maven.leafmc.one/snapshots/")|g' bukkit/build.gradle.kts
-          sed -i 's|compileOnly(libs.paper.api)|compileOnly("cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT")|g' bukkit/build.gradle.kts
-
-          echo "Configuring Java 25 toolchain for bukkit module (required for leaf-api 26.x class version 69.0)..."
-          echo "tasks.withType<JavaCompile>().configureEach { options.release.set(25) }" >> bukkit/build.gradle.kts
-          echo "java { toolchain.languageVersion.set(JavaLanguageVersion.of(25)) }" >> bukkit/build.gradle.kts
+          chmod +x custom-repo/custom/patches/apply-patches.sh
+          ./custom-repo/custom/patches/apply-patches.sh custom-repo/custom
+          rm -rf custom-repo
 
       - name: Build GrimAC Bukkit with ShadowJar
         run: ./gradlew :bukkit:assemble -x test -x spotlessCheck --no-daemon
 
-      - name: Rename JAR (bukkit → leaf)
-        run: |
-          for f in bukkit/build/libs/grimac-bukkit-*.jar; do
-            mv "$f" "${f/grimac-bukkit-/grimac-leaf-}"
-          done
-
-      - name: Locate Build Artifact
-        id: find_jar
+      - name: Prepare Clean Build Artifact (grimac-leaf.jar)
+        id: prepare_jar
         shell: bash
         run: |
-          JAR_PATH=$(find bukkit/build/libs/ -name "grimac-leaf-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
-          if [ -z "$JAR_PATH" ] || [ ! -f "$JAR_PATH" ]; then
-            echo "::error::Build artifact grimac-leaf-*.jar was not found!"
+          RAW_JAR=$(find bukkit/build/libs/ -name "grimac-bukkit-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$RAW_JAR" ] || [ ! -f "$RAW_JAR" ]; then
+            echo "::error::Build artifact grimac-bukkit-*.jar nebyl nalezen!"
             exit 1
           fi
-          echo "Found jar: $JAR_PATH"
-          echo "jar_path=$JAR_PATH" >> "$GITHUB_OUTPUT"
-          JAR_NAME=$(basename "$JAR_PATH")
-          echo "jar_name=$JAR_NAME" >> "$GITHUB_OUTPUT"
+          echo "Nalezen sestavený JAR: $RAW_JAR"
 
-          BASE_VERSION="${JAR_NAME#grimac-leaf-}"
-          BASE_VERSION="${BASE_VERSION%.jar}"
-          if [ "${{ github.run_attempt }}" = "1" ]; then
-            RELEASE_TAG="v${BASE_VERSION}-b${{ github.run_number }}"
-          else
-            RELEASE_TAG="v${BASE_VERSION}-b${{ github.run_number }}.${{ github.run_attempt }}"
-          fi
-          echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Create New GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.find_jar.outputs.release_tag }}
-          target_commitish: ${{ github.sha }}
-          name: "GrimAC (Leaf Build) - ${{ steps.find_jar.outputs.base_version }}"
-          body: |
-            Automaticky sestavený nejnovější build GrimAC optimalizovaný pro **Leaf API (Minecraft 26.x)**.
-
-            - **Verze buildu:** `${{ steps.find_jar.outputs.base_version }}` (run #${{ github.run_number }})
-            - **Upstream repozitář:** [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) (větev `2.0`)
-            - **API cíl:** `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT` ([maven.leafmc.one/snapshots](https://maven.leafmc.one/snapshots/))
-            - **Architektura:** Asynchronní Netty packet processing + tick-synchronní determinismus
-            - **Java:** 25 (LTS)
-            - **Aktualizováno:** Každou neděli automaticky nebo na vyžádání.
-          files: ${{ steps.find_jar.outputs.jar_path }}
-          prerelease: false
-          draft: false
-          make_latest: 'true'
+          # Přejmenování na čistý název bez verzí a čísel na konci
+          CLEAN_JAR="bukkit/build/libs/grimac-leaf.jar"
+          cp "$RAW_JAR" "$CLEAN_JAR"
+          echo "Vytvořen čistý artefakt: $CLEAN_JAR"
+          echo "jar_path=$CLEAN_JAR" >> "$GITHUB_OUTPUT"
 
       - name: Delete Old Releases and Tags
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          CURRENT_TAG: ${{ steps.find_jar.outputs.release_tag }}
         run: |
-          echo "Cleaning up old releases (keeping only ${CURRENT_TAG})..."
-          while IFS='|' read -r rel_id rel_tag; do
-            [ -z "$rel_id" ] && continue
-            echo "Deleting old release ID=${rel_id} (tag=${rel_tag:-none})..."
-            gh api -X DELETE "repos/${REPO}/releases/${rel_id}" || echo "::warning::Failed to delete release ID=${rel_id}"
-          done < <(gh api --paginate "repos/${REPO}/releases" --jq --arg current "$CURRENT_TAG" '.[] | select(.tag_name != $current) | "\(.id)|\(.tag_name // "")"')
+          echo "Čištění starých releases a tagů..."
+          RELEASES=$(gh release list --repo "$REPO" --limit 100 --json tagName -q '.[].tagName' 2>/dev/null || true)
+          for tag in $RELEASES; do
+            if [ -n "$tag" ]; then
+              echo "Mažu existující release: $tag"
+              gh release delete "$tag" --repo "$REPO" --yes --cleanup-tag || echo "::warning::Nepodařilo se smazat release $tag"
+            fi
+          done
 
-          echo "Cleaning up old git tags (keeping only ${CURRENT_TAG})..."
+          # Odstranění případných osiřelých tagů
           while read -r encoded_tag; do
             [ -z "$encoded_tag" ] && continue
-            echo "Deleting old tag: ${encoded_tag}..."
-            gh api -X DELETE "repos/${REPO}/git/refs/tags/${encoded_tag}" || echo "::warning::Failed to delete tag ${encoded_tag}"
-          done < <(gh api --paginate "repos/${REPO}/tags" --jq --arg current "$CURRENT_TAG" '.[] | select(.name != $current) | (.name | @uri)')
+            echo "Mažu tag: ${encoded_tag}..."
+            gh api -X DELETE "repos/${REPO}/git/refs/tags/${encoded_tag}" 2>/dev/null || true
+          done < <(gh api --paginate "repos/${REPO}/tags" --jq '.[].name | @uri' 2>/dev/null || true)
+
+      - name: Create Clean GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "latest"
+          target_commitish: "main"
+          name: "GrimAC Leaf"
+          body: |
+            Automaticky sestavený nejnovější build GrimAC optimalizovaný pro **Leaf API (Minecraft 26.x)** a **Java 25**.
+
+            ### 💎 Provedené úpravy (MYCHAL SMP Custom Edition):
+            - **Sladění s designovým systémem MYCHAL SMP:**
+              - Odstraněny veškeré ošklivé prefixy zpráv (`prefix: ""`).
+              - Oficiální brand barevná paleta (Modrá `#0a67e5`, Červená `#f51515`, Zelená `#21DE00`, Šedá `#94a3b8`).
+              - Prémiová uzavřenost a MiniMessage formátování (bez technického šumu).
+            - **Nativní Leaf & Java 25 optimalizace:**
+              - Kompilováno přímo proti `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT`.
+              - Plný Java 25 toolchain a UTF-8 bytecode kompilace pro maximální výkon.
+            - **Debloat (vyčištění zbytečností):**
+              - Kompletně odstraněna bStats telemetrie (žádné externí HTTP požadavky).
+              - Odstraněn integrovaný update checker (žádné falešné varovné hlášky v konzoli).
+              - Vypnuty nepoužívané Fabric moduly pro zrychlení a odlehčení.
+
+            ---
+            - **Soubor:** `grimac-leaf.jar`
+            - **Upstream commit:** [GrimAnticheat/Grim@${{ needs.check-upstream.outputs.upstream_sha }}](https://github.com/GrimAnticheat/Grim/commit/${{ needs.check-upstream.outputs.upstream_sha }})
+            - **Zpráva commitu:** `${{ needs.check-upstream.outputs.upstream_msg }}`
+            - **Datum upstreamu:** `${{ needs.check-upstream.outputs.upstream_date }}`
+            - **Přímé stažení:** [grimac-leaf.jar](https://github.com/${{ github.repository }}/releases/latest/download/grimac-leaf.jar)
+          files: ${{ steps.prepare_jar.outputs.jar_path }}
+          prerelease: false
+          draft: false
+          make_latest: 'true'
