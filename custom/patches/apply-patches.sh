@@ -75,14 +75,14 @@ if [ -f "bukkit/build.gradle.kts" ]; then
 fi
 
 # -------------------------------------------------------------
-# 6. JAVA 25: Toolchain a parametry kompilátoru
+# 6. JAVA 25: Toolchain a parametry kompilátoru v base conventions
 # -------------------------------------------------------------
-echo "[6/6] Java 25 - nastavení toolchainu a UTF-8 kódování..."
-for gradle_file in build.gradle.kts common/build.gradle.kts bukkit/build.gradle.kts; do
-    if [ -f "$gradle_file" ]; then
-        echo "tasks.withType<JavaCompile>().configureEach { options.release.set(25); options.encoding = \"UTF-8\" }" >> "$gradle_file"
-        echo "java { toolchain.languageVersion.set(JavaLanguageVersion.of(25)) }" >> "$gradle_file"
-    fi
-done
+echo "[6/6] Java 25 - nastavení toolchainu v base-conventions..."
+CONVENTIONS="buildSrc/src/main/kotlin/grim.base-conventions.gradle.kts"
+if [ -f "$CONVENTIONS" ]; then
+    sed -i 's/JavaLanguageVersion.of(21)/JavaLanguageVersion.of(25)/g' "$CONVENTIONS"
+    sed -i 's/options.release.set(17)/options.release.set(25)/g' "$CONVENTIONS"
+    echo "  -> Java 25 nastavena v base-conventions"
+fi
 
 echo "=== Všechny úpravy úspěšně aplikovány ==="
