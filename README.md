@@ -1,7 +1,8 @@
-# GrimAC – Leaf Edition
+# GrimAC – Leaf Edition (MYCHAL SMP Custom)
 
-> **Auto-synced & compiled fork** of [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) compiled natively against **Leaf API (`cn.dreeam.leaf:leaf-api`) for Minecraft 26.x and Java 25**.  
-> No manual maintenance required — GitHub Actions rebuilds it **automatically every week**.
+> **Auto-synced & custom-tuned build** of [GrimAnticheat/Grim](https://github.com/GrimAnticheat/Grim) compiled natively against **Leaf API (`cn.dreeam.leaf:leaf-api`) for Minecraft 26.x and Java 25**.  
+> Features zero-bloat, debloated telemetries, and seamless alignment with the **MYCHAL SMP Design System**.  
+> Automatically monitors upstream Grim commits every 4 hours and rebuilds immediately when changes are detected.
 
 [![Latest Release](https://img.shields.io/github/v/release/mychalVidea/grimac-leaf?label=latest%20build&color=brightgreen)](https://github.com/mychalVidea/grimac-leaf/releases/latest)
 [![Auto-Build](https://img.shields.io/github/actions/workflow/status/mychalVidea/grimac-leaf/auto-build.yml?label=auto-build)](https://github.com/mychalVidea/grimac-leaf/actions)
@@ -10,82 +11,60 @@
 
 ## 📥 Download
 
-Always grab the latest JAR from the Releases page:  
-👉 **[Releases → Latest Build](https://github.com/mychalVidea/grimac-leaf/releases/latest)**
+Always grab the clean, unversioned JAR from the Releases page:  
+👉 **[Releases → Latest Build](https://github.com/mychalVidea/grimac-leaf/releases/latest)**  
+👉 **Direct download link:** `https://github.com/mychalVidea/grimac-leaf/releases/latest/download/grimac-leaf.jar`
 
-Drop `grimac-leaf-{version}.jar` into your server's `plugins/` folder and restart.
+Drop `grimac-leaf.jar` into your server's `plugins/` folder and restart.
 
 ---
 
-## 📊 Comparison
+## ✨ Provedené úpravy & vylepšení (Custom Features)
 
-### Upstream GrimAC vs. This Leaf Build
+### 🎨 1. Sladění s designovým systémem MYCHAL SMP
+- **🚫 Žádné prefixy:** Veškeré hranaté prefixy (`[GrimAC]` nebo `Grim »`) byly kompletně odstraněny (`prefix: ""`). Zprávy jsou čisté a moderní.
+- **🎨 Brand barevná hierarchie:**
+  - **Modrá (`#0a67e5`):** Jména hráčů, názvy checků, klíčové hodnoty a interaktivní prvky.
+  - **Červená (`#f51515`):** Detekce, anomálie, chyby a varování.
+  - **Zelená (`#21DE00`):** Úspěšná potvrzení a zapnutí funkcí.
+  - **Šedá (`#94a3b8`):** Běžný doplňkový text a oddělovače.
+- **🛡️ Prémiová uzavřenost:** Odstraněn zbytečný technický šum a interní bodové kalkulace z výstupů pro hráče.
 
-| Aspect / Feature | Upstream GrimAC (Official) | `grimac-leaf` (This Build) |
+### ⚡ 2. Nativní Leaf & Java 25 optimalizace
+- **Nativní Leaf API:** Kompilováno a linkováno přímo proti `cn.dreeam.leaf:leaf-api:26.3.local-SNAPSHOT` namísto Paper wrapperu.
+- **Java 25 (LTS):** Nastaven kompletní Java 25 toolchain a optimalizace kompilátoru s UTF-8 kódováním pro maximální výkon a nízkou latenci.
+
+### 🧹 3. Debloat (vyčištění zbytečností)
+- **🚫 Odstranění bStats:** Třída bStats telemetrie byla ze zavaděče pluginu zcela odstraněna. Žádné odesílání dat na externí servery ani zbytečná vlákna.
+- **🚫 Odstranění UpdateCheckeru:** Vypnuta kontrola verzí pingající upstream GitHub/Spigot, která na vlastním buildu vyvolávala falešná varování v konzoli.
+- **⚡ Odstranění Fabric modulů:** Vypnuty nepoužívané Fabric moduly v Gradle sestavení pro rychlejší kompilaci a čistší výsledný artefakt.
+
+---
+
+## 📊 Porovnání (Upstream GrimAC vs. Tento Custom Leaf Build)
+
+| Aspekt / Vlastnost | Upstream GrimAC (Oficiální) | `grimac-leaf` (Tento Custom Build) |
 |---|---|---|
-| **Anticheat Core Logic** | GrimAC 2.0 codebase | **100% identical GrimAC 2.0 logic** (zero check tampering) |
-| **Compiled Against** | `io.papermc.paper:paper-api` (1.20.6) | **`cn.dreeam.leaf:leaf-api` (26.3 SNAPSHOT)** |
-| **Java Target** | Java 21 | **Java 25 (LTS)** |
-| **Leaf 26.x Compatibility** | Runs via legacy compatibility layer | **Directly linked against native Leaf API classes** |
-| **Binary Availability** | Must be compiled manually from source | **Pre-built `.jar` in Releases (automated weekly builds)** |
-| **Artifact Name** | `grimac-bukkit-{version}.jar` | **`grimac-leaf-{version}.jar`** |
-
----
-
-## 🔄 How auto-updates work
-
-Every **Sunday at 04:00 UTC** a GitHub Actions runner:
-1. Pulls the latest commit from `GrimAnticheat/Grim` (`2.0` branch).
-2. Strips Fabric modules for faster compilation.
-3. Applies Leaf API maven configuration.
-4. Compiles `grimac-leaf-{version}.jar` using Java 25.
-5. Publishes it to the **Releases** tab.
-
-You don't have to do anything — just **watch this repo for releases** (the 👁 Watch button → Custom → Releases).
-
-Want a build right now? Go to **Actions → Auto-Sync & Build GrimAC for Leaf → Run workflow**.
-
----
-
-## 🛠️ Compatibility
-
-- **Server software:** [LeafMC](https://github.com/Winds-Studio/Leaf) 26.2 / 26.3, Purpur, Paper
-- **Minecraft version:** 26.2 – 26.3
-- **Java:** **25** (LTS)
-- **Based on:** GrimAC `2.0` branch
-
----
-
-<details>
-<summary>🇨🇿 Česky</summary>
-
-### Stažení
-
-Nejnovější zkompilovaný JAR najdeš v záložce Releases:  
-👉 **[Releases / Nejnovější build](https://github.com/mychalVidea/grimac-leaf/releases/latest)**
-
-Vlož soubor `grimac-leaf-{version}.jar` do složky `plugins/` na serveru a restartuj.
-
-### 📊 Porovnání (Upstream GrimAC vs. Tento Leaf build)
-
-| Aspekt / Vlastnost | Upstream GrimAC (Oficiální) | `grimac-leaf` (Tento build) |
-|---|---|---|
-| **Kód / Logika anticheatu** | GrimAC 2.0 (GrimAnticheat/Grim) | **100% identický kód GrimAC 2.0** (žádné zásahy do detekcí) |
+| **Zprávy & UI Prefix** | `&bGrim &8» ...` | **Čisté bez prefixu**, barvy `#0a67e5`, `#f51515`, `#94a3b8` |
+| **Telemetrie (bStats)** | Aktivní (odesílá data) | **Zcela odstraněno (Debloated)** |
+| **Update Checker** | Pingá Spigot/GitHub | **Deaktivováno** (aktualizace řídí GitHub Actions) |
 | **Kompilováno proti** | `io.papermc.paper:paper-api` (1.20.6) | **`cn.dreeam.leaf:leaf-api` (26.3 SNAPSHOT)** |
 | **Cílová verze Javy** | Java 21 | **Java 25 (LTS)** |
-| **Kompatibilita s Leaf 26.x** | Běží přes zpětnou kompatibilitu | **Přímé linkování proti nativním Leaf API třídám** |
-| **Dostupnost sestavení** | Nutno kompilovat ručně ze zdrojáků | **Hotový `.jar` ke stažení v Releases (týdenní auto-build)** |
-| **Název souboru** | `grimac-bukkit-{verze}.jar` | **`grimac-leaf-{verze}.jar`** |
+| **Kompatibilita s Leaf 26.x**| Přes zpětnou kompatibilitu | **Přímé linkování proti nativním Leaf API třídám** |
+| **Název souboru** | `grimac-bukkit-{verze}.jar` | **`grimac-leaf.jar`** (čistý název bez čísel) |
+| **Dostupnost sestavení** | Ruční kompilace | **Automatický build každé 4 hodiny při změně upstreamu** |
 
-### Jak fungují automatické aktualizace
+---
 
-Každou neděli v 04:00 UTC GitHub Actions automaticky:
-1. Stáhne nejnovější kód z `GrimAnticheat/Grim` (větev `2.0`).
-2. Nastaví Leaf API a Java 25.
-3. Zkompiluje hotový `grimac-leaf.jar`.
-4. Nahraje ho do sekce **Releases**.
+## 🔄 Jak fungují automatické aktualizace
 
-Nemusíš dělat nic – stačí zapnout notifikace na releases (👁 Watch → Custom → Releases).  
+Každé **4 hodiny** GitHub Actions automaticky:
+1. Zkontroluje přes GitHub API nejnovější commit na větvi `2.0` v `GrimAnticheat/Grim`.
+2. Pokud žádná změna neproběhla, kontrola skončí za 2 sekundy.
+3. Jakmile Grim vydá nový commit nebo release:
+   - Stáhne kód Grimu a aplikuje debloat, designový systém a Leaf API.
+   - Zkompiluje hotový čistý `grimac-leaf.jar` pod Java 25.
+   - Smaže staré verze a tagy z Releases.
+   - Vytvoří nový release **GrimAC Leaf** s trvalým odkazem.
+
 Chceš build hned? Jdi do **Actions → Auto-Sync & Build GrimAC for Leaf → Run workflow**.
-
-</details>

@@ -1,0 +1,100 @@
+# MYCHAL SMP – Brand Aligned Messages
+# Strict compliance with AGENTS.md:
+# 1. No prefixes (prefix is empty)
+# 2. Brand Colors: Blue (#0a67e5), Red (#f51515), Green (#21DE00), Slate Gray (#94a3b8)
+# 3. Premium tone: Clean, no internal strike calculations or noise
+
+prefix: ""
+
+alerts-enabled: "<#21DE00>Upozornění anticheatu byla zapnuta."
+alerts-disabled: "<#f51515>Upozornění anticheatu byla vypnuta."
+verbose-enabled: "<#21DE00>Podrobný výpis byl zapnut."
+verbose-disabled: "<#f51515>Podrobný výpis byl vypnut."
+brands-enabled: "<#21DE00>Zobrazování klientských verzí zapnuto."
+brands-disabled: "<#f51515>Zobrazování klientských verzí vypnuto."
+client-brand-format: "<#0a67e5>%player% &7používá klienta: <#0a67e5>%brand%"
+console-specify-target: "<#f51515>V konzoli musíš zadat cílového hráče."
+reloading: "<#94a3b8>Načítání konfigurace..."
+reloaded: "<#21DE00>Konfigurace byla úspěšně načtena."
+reload-failed: "<#f51515>Nepodařilo se načíst konfiguraci."
+player-not-found: "<#f51515>Hráč nebyl nalezen nebo je offline."
+player-not-this-server: "<#f51515>Hráč se nenachází na tomto serveru."
+sender-not-found: "<#f51515>Nemáš oprávnění pro tento příkaz."
+spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"<#0a67e5>Kliknutím se vrátíš na původní pozici\"><#0a67e5>Kliknutím zde se vrátíš na původní pozici.</hover></click>"
+cannot-spectate-return: "<#f51515>Tuto akci lze provést pouze po sledování hráče."
+cannot-run-on-self: "<#f51515>Tento příkaz nelze použít na sebe."
+upload-log: "<#21DE00>Záznam byl nahrán: <#0a67e5>%url%"
+upload-log-start: "<#94a3b8>Nahrávání záznamu, okamžik..."
+upload-log-not-found: "<#f51515>Záznam nebyl nalezen."
+upload-log-upload-failure: "<#f51515>Nahrávání záznamu selhalo, zkontroluj konzoli."
+disconnect:
+    timeout: "<lang:disconnect.timeout>"
+    closed: "<lang:disconnect.closed>"
+    error: "<#f51515>Došlo k chybě při zpracování paketů. Kontaktuj administrátora."
+    blacklisted-forge: "<#f51515>Použitá verze Forge obsahuje bezpečnostní anomálie a není na serveru povolena."
+run-as-player: "<#f51515>Tento příkaz mohou používat pouze hráči ve hře."
+run-as-player-or-console: "<#f51515>Tento příkaz mohou používat pouze hráči nebo konzole."
+webhook-not-enabled: "<#f51515>Discord webhooky nejsou aktivní."
+webhook-test-message: "Testovací zpráva anticheatu"
+webhook-test-succeeded: "<#21DE00>Odeslání testovací zprávy proběhlo úspěšně."
+webhook-test-failed: "<#f51515>Odeslání testovací zprávy selhalo."
+
+# Valid placeholders:
+# %prefix%, %player%, %check_name%, %description%, %experimental%, %vl%, %verbose%
+alerts-format: "<#f51515>Detekce: <#0a67e5>%player% &7selhal <hover:show_text:\"<#0a67e5>%check_name%%experimental%\n<#94a3b8>%description%\"><#0a67e5>%check_name%%experimental%</hover> &7(x<#f51515>%vl%&7) <#94a3b8>%verbose%"
+alerts-format-proxy: "<#f51515>[Proxy] Detekce: <#0a67e5>%player% &7selhal <#0a67e5>%check_name%%experimental% &7(x<#f51515>%vl%&7) <#94a3b8>%verbose%"
+experimental-symbol: "*"
+
+profile:
+    - "<#94a3b8>======================"
+    - "<#0a67e5>Profil hráče: <#ffffff>%player%"
+    - "<#0a67e5>Ping: <#ffffff>%ping% ms"
+    - "<#0a67e5>Verze: <#ffffff>%version%"
+    - "<#0a67e5>Klient: <#ffffff>%brand%"
+    - "<#0a67e5>Horizontální citlivost: <#ffffff>%h_sensitivity%%"
+    - "<#0a67e5>Vertikální citlivost: <#ffffff>%v_sensitivity%%"
+    - "<#0a67e5>FastMath: <#ffffff>%fast_math%"
+    - "<#94a3b8>======================"
+help:
+    - "<#94a3b8>======================"
+    - "<#0a67e5>/grim alerts <#94a3b8>- Přepnutí upozornění"
+    - "<#0a67e5>/grim brands <#94a3b8>- Přepnutí zobrazení klientů"
+    - "<#0a67e5>/grim profile <hráč> <#94a3b8>- Zobrazení informací o hráči"
+    - "<#0a67e5>/grim help <#94a3b8>- Zobrazení této nápovědy"
+    - "<#0a67e5>/grim debug <hráč> <#94a3b8>- Predikční diagnostika"
+    - "<#0a67e5>/grim perf <#94a3b8>- Výkonnost predikce"
+    - "<#0a67e5>/grim reload <#94a3b8>- Znovu načte konfiguraci"
+    - "<#0a67e5>/grim spectate <hráč> <#94a3b8>- Sledování hráče"
+    - "<#0a67e5>/grim verbose <#94a3b8>- Podrobný výpis všech flagů"
+    - "<#0a67e5>/grim log [0-255] <#94a3b8>- Nahrání debug logu"
+    - "<#0a67e5>/grim history <hráč> <#94a3b8>- Historie relací"
+    - "<#94a3b8>======================"
+
+grim-history-load-failure: "<#f51515>Historie se nepodařila načíst."
+grim-history-disabled: "<#94a3b8>Historie je vypnutá."
+grim-history-failed: "<#f51515>Chyba při načítání historie: <#94a3b8>%error%"
+grim-history-unknown-player: "<#f51515>Neznámý hráč: <#0a67e5>%player%"
+grim-history-no-sessions: "<#94a3b8>Pro hráče <#0a67e5>%player% <#94a3b8>nebyla nalezena žádná historie."
+grim-history-session-not-found: "<#f51515>Relace <#ffffff>%ordinal% <#f51515>nebyla nalezena."
+
+grim-history-header: "<#0a67e5>Historie relací hráče <#ffffff>%player% <#94a3b8>[%page%/%max_pages%]"
+grim-history-session: "<hover:show_text:'<#0a67e5>Relace <#94a3b8>%session_uuid%<newline><#94a3b8>Kliknutím zobrazíš detail.'><#94a3b8>[<#0a67e5>%server_name%<#94a3b8>] <#0a67e5>Relace <#ffffff>%ordinal% <#94a3b8>(%duration%, <#f51515>%violations% <#94a3b8>anomálií)%crashed_marker% <#94a3b8>(před %timeago%)</hover>"
+grim-history-crashed-marker: " <#f51515>(přerušeno)"
+
+grim-history-detail-header: "<#0a67e5>Detail relace <#ffffff>%ordinal% <#0a67e5>hráče <#ffffff>%player%<#0a67e5>:"
+grim-history-detail-meta1: "<#94a3b8>Server: <#ffffff>%server_name%<#94a3b8>, Doba: <#ffffff>%duration%<#94a3b8>, Před: <#ffffff>%timeago%"
+grim-history-detail-meta2: "<#94a3b8>Klient: <#ffffff>%client_version% <#94a3b8>(%client_brand%)"
+grim-history-detail-violations-header: "<#0a67e5>Zaznamenané anomálie: <#94a3b8>(celkem <#f51515>%violations%<#94a3b8>, unikátních <#0a67e5>%unique_checks%<#94a3b8>)"
+grim-history-detail-empty: "<#94a3b8>- (žádné záznamy)"
+grim-history-detail-group: "<hover:show_text:'<#0a67e5>Anomálie v <#ffffff>%bucket_start%–%bucket_end%<#0a67e5>:%bucket_hover_entries%'><#94a3b8>- %checks_list% <#94a3b8>(<#0a67e5>%offset%<#94a3b8>)</hover>"
+grim-history-detail-group-hover: "<#0a67e5>Anomálie v <#ffffff>%bucket_start%–%bucket_end%<#0a67e5>:%bucket_hover_entries%"
+grim-history-detail-group-hover-entry: "<newline><#94a3b8>  %offset% <#0a67e5>%check%<#94a3b8>%description%%verbose%"
+grim-history-hover-description: " — <#ffffff>%description%"
+grim-history-detail-group-hover-verbose: " — <#94a3b8>%verbose%"
+grim-history-detail-entry: "<#94a3b8>- <#ffffff>%check% <#94a3b8>(<#0a67e5>%offset%<#94a3b8>) %verbose%"
+grim-history-detail-entry-hover: "<#0a67e5>%check%<#ffffff>%description%<newline><#94a3b8>@ %offset% — anomálie: <#f51515>%vl%%verbose%"
+grim-history-detail-entry-hover-verbose: "<newline><#94a3b8>%verbose%"
+grim-history-check-count: "<#ffffff>%check_name% <#94a3b8>x<#f51515>%count%"
+
+config-flavor: V2
+config-version: 2
